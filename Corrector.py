@@ -1,5 +1,6 @@
 import openai
 import sys
+import concurrent.futures
 
 openai.api_key = open("api_key.txt", "r").read()
 
@@ -29,7 +30,7 @@ def correct_grammar(text):
 def get_text():
     try:
         with open("input.txt", "r") as file:
-            return file.read()
+            return file.read().split('\n\n')
     except FileNotFoundError:
         print("input.txt file not found.")
         sys.exit(1)
@@ -40,15 +41,16 @@ def get_text():
 def write_text(corrected_text):
     try:
         with open("output.txt", "w") as file:
-            file.write(corrected_text)
+            file.write('\n\n'.join(corrected_text))
     except Exception as e:
         print(f"Error occurred while writing to the file: {e}")
         sys.exit(1)
 
 def main():
-    text = get_text()
-    corrected_text = correct_grammar(text)
-    write_text(corrected_text)
+    paragraphs = get_text()
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        corrected_paragraphs = list(executor.map(correct_grammar, paragraphs))
+    write_text(corrected_paragraphs)
 
 if __name__ == "__main__":
     main()
